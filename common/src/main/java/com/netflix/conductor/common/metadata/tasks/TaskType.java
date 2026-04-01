@@ -87,6 +87,7 @@ public enum TaskType {
         BUILT_IN_TASKS.add(TASK_TYPE_JOIN);
         BUILT_IN_TASKS.add(TASK_TYPE_EXCLUSIVE_JOIN);
         BUILT_IN_TASKS.add(TASK_TYPE_DO_WHILE);
+        BUILT_IN_TASKS.add(TASK_TYPE_CONDITIONAL_FORK);
     }
 
     /**

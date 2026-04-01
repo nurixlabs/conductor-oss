@@ -1,0 +1,51 @@
+name: Deploy with Helm
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: 'Service name to deploy'
+        required: true
+        type: choice
+        options:
+          - conductor
+        default: 'conductor'
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options:
+          - dev
+          - stage
+          - prod
+        default: 'dev'
+      region:
+        description: 'AWS region to deploy to'
+        required: true
+        type: choice
+        options:
+          - in
+          - us
+        default: 'in'
+      image_tag:
+        description: 'Image tag to deploy (e.g., dev-abc123)'
+        required: true
+        type: string
+        default: 'dev-latest'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-deploy-helm.yml@stable
+    with:
+      environment: ${{ github.event.inputs.environment || 'dev' }}
+      region: ${{ github.event.inputs.region || 'in' }}
+      image_tag: ${{ github.event.inputs.image_tag }}
+      service_name: ${{ github.event.inputs.service_name || 'workflow' }}
+      image_repo: 'conductor'
+      helm_chart_name: 'java-service'
+      namespace: ${{ github.event.inputs.service_name || 'workflow' }}
+
