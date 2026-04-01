@@ -1,0 +1,49 @@
+name: Application Build
+
+on:
+  pull_request:
+    branches: [dev, stage, main]
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [dev, stage, main, test-migration]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: ap-south-1
+  AWS_ACCOUNT_ID: ${{ secrets.AWS_ACCOUNT_ID }}
+
+jobs:
+  build:
+    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-java-gradle-build.yml@stable
+    with:
+      ecr_repository: 'conductor-oss'
+      aws_region: ap-south-1
+      helm_chart_name: 'java-service'
+      dockerfile: 'java-service-gradle.Dockerfile'
+      dockerfile_context: 'conductor-oss'
+      skip_tests: true
+      ignore_test_failures: true      
+      gradle_root_dir: 'conductor-oss'
+      gradle_jar_path: 'server/build/libs/*boot*.jar'
+      jar_name: 'conductor-server.jar'
+      port: '8080'      
+    secrets:
+      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+
+  auto-deploy-in:
+    name: Auto-deploy to in-${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/stage' && 'stage' || github.ref == 'refs/heads/test-migration' && 'dev' }}
+    needs: build
+    if: (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/stage') && github.event_name == 'push'
+    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-deploy-helm.yml@java
+    with:
+      environment: ${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/stage' && 'stage' }}
+      region: 'in'
+      image_repo: 'conductor'
+      image_tag: ${{ needs.build.outputs.image_tag }}
+      service_name: 'conductor'
+      helm_chart_name: 'java-service'
+
