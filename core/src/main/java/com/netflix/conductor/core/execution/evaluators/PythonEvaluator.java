@@ -20,12 +20,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.conductor.core.exception.TerminateWorkflowException;
 
 @Component(PythonEvaluator.NAME)
 public class PythonEvaluator implements Evaluator {
     public static final String NAME = "python";
     private static final Logger LOGGER = LoggerFactory.getLogger(PythonEvaluator.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public Object evaluate(String expression, Object input) {
@@ -33,9 +35,12 @@ public class PythonEvaluator implements Evaluator {
             if (input instanceof Map) {
                 Map<String, Object> inputMap = (Map<String, Object>) input;
 
-                // Set inputs as variables in the GraalVM context
+                // Serialize each value to a JSON string before injecting into GraalPy.
+                // This mirrors how CUSTOM_CODE passes variables — as JSON strings —
+                // ensuring Python receives native str objects, not raw Java objects.
                 for (Map.Entry<String, Object> entry : inputMap.entrySet()) {
-                    context.getBindings("python").putMember(entry.getKey(), entry.getValue());
+                    String jsonValue = OBJECT_MAPPER.writeValueAsString(entry.getValue());
+                    context.getBindings("python").putMember(entry.getKey(), jsonValue);
                 }
 
                 // Build the global declaration dynamically

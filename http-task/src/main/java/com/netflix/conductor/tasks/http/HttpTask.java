@@ -172,7 +172,7 @@ public class HttpTask extends WorkflowSystemTask {
         try {
             ResponseEntity<String> responseEntity =
                     restTemplate.exchange(
-                            input.getUri(),
+                            java.net.URI.create(input.getUri()),
                             HttpMethod.valueOf(input.getMethod()),
                             request,
                             String.class);
