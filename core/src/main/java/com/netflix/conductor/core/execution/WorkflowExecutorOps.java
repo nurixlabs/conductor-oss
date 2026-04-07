@@ -23,6 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import com.netflix.conductor.core.logging.ConductorLogger;
+
 import com.netflix.conductor.annotations.Trace;
 import com.netflix.conductor.annotations.VisibleForTesting;
 import com.netflix.conductor.common.metadata.tasks.*;
@@ -65,6 +67,8 @@ import static org.conductoross.conductor.core.execution.ExecutorUtils.computePos
 public class WorkflowExecutorOps implements WorkflowExecutor {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(WorkflowExecutorOps.class);
+    private static final ConductorLogger ROLLBAR =
+            ConductorLogger.getLogger(WorkflowExecutorOps.class);
     private static final int EXPEDITED_PRIORITY = 10;
     private static final String CLASS_NAME = WorkflowExecutor.class.getSimpleName();
     private static final Predicate<TaskModel> UNSUCCESSFUL_TERMINAL_TASK =
@@ -631,6 +635,18 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
 
             if (!workflow.getStatus().isTerminal()) {
                 workflow.setStatus(WorkflowModel.Status.TERMINATED);
+            }
+
+            WorkflowModel.Status terminalStatus = workflow.getStatus();
+            if (!terminalStatus.isSuccessful()) {
+                Map<String, Object> fields = new HashMap<>();
+                fields.put("workflow_id", workflow.getWorkflowId());
+                fields.put("workflow_name", workflow.getWorkflowName());
+                fields.put("status", terminalStatus.name());
+                if (reason != null) fields.put("reason", reason);
+                if (workflow.getCorrelationId() != null)
+                    fields.put("correlation_id", workflow.getCorrelationId());
+                ROLLBAR.error("[Workflow Failure]", null, fields);
             }
 
             try {
@@ -2013,6 +2029,11 @@ public class WorkflowExecutorOps implements WorkflowExecutor {
             Monitors.recordWorkflowStartError(
                     workflowDefinition.getName(), WorkflowContext.get().getClientApp());
             LOGGER.error("Unable to start workflow: {}", workflowDefinition.getName(), e);
+            Map<String, Object> startFailureFields = new HashMap<>();
+            startFailureFields.put("workflow_id", workflowId);
+            startFailureFields.put("workflow_name", workflowDefinition.getName());
+            startFailureFields.put("workflow_version", workflowDefinition.getVersion());
+            ROLLBAR.error("[Workflow Start Failure]", e, startFailureFields);
 
             // It's possible the remove workflow call hits an exception as well, in that
             // case we
