@@ -48,4 +48,3 @@ jobs:
       image_tag: ${{ needs.build.outputs.image_tag }}
       service_name: 'conductor'
       helm_chart_name: 'java-service'
-
