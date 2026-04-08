@@ -39,7 +39,7 @@ permissions:
 
 jobs:
   deploy:
-    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-deploy-helm.yml@stable
+    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-deploy-helm.yml@conductor
     with:
       environment: ${{ github.event.inputs.environment || 'dev' }}
       region: ${{ github.event.inputs.region || 'in' }}
