@@ -18,16 +18,18 @@ env:
 
 jobs:
   build:
-    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-java-gradle-build.yml@stable
+    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-java-gradle-build.yml@conductor
     with:
       ecr_repository: 'conductor-oss'
+      java_version: '21'
       aws_region: ap-south-1
       helm_chart_name: 'java-service'
-      dockerfile: 'java-service-gradle.Dockerfile'
-      dockerfile_context: 'conductor-oss'
+      dockerfile_from_repo: true
+      dockerfile: 'docker/server/Dockerfile'
+      dockerfile_context: '.'
       skip_tests: true
-      ignore_test_failures: true      
-      gradle_root_dir: 'conductor-oss'
+      ignore_test_failures: true
+      gradle_root_dir: '.'
       gradle_jar_path: 'server/build/libs/*boot*.jar'
       jar_name: 'conductor-server.jar'
       port: '8080'      
