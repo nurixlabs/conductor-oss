@@ -40,7 +40,7 @@ jobs:
     name: Auto-deploy to in-${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/stage' && 'stage' || github.ref == 'refs/heads/test-migration' && 'dev' }}
     needs: build
     if: (github.ref == 'refs/heads/dev' || github.ref == 'refs/heads/stage') && github.event_name == 'push'
-    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-deploy-helm.yml@java
+    uses: nurixlabs/github-shared-workflows/.github/workflows/gsw-deploy-helm.yml@stable
     with:
       environment: ${{ github.ref == 'refs/heads/dev' && 'dev' || github.ref == 'refs/heads/stage' && 'stage' }}
       region: 'in'
